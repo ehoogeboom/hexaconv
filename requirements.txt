@@ -1,0 +1,6 @@
+numpy==1.10.4
+scipy
+chainer==1.9.0
+progressbar2
+scikit-image
+h5py
