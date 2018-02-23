@@ -1,0 +1,11 @@
+language: python
+python:
+  - "2.7"
+
+install:
+  - pip install numpy pytest
+
+cache: pip
+
+script:
+  - pytest --ignore groupy/gconv
