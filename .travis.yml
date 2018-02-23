@@ -4,9 +4,9 @@ python:
   - "3.4"
 
 install:
-  - pip install numpy pytest
+  - pip install numpy pytest tensorflow
 
 cache: pip
 
 script:
-  - pytest --ignore groupy/gconv
+  - pytest --ignore groupy/gconv/gconv_chainer
