@@ -1,8 +1,8 @@
 import tensorflow as tf
 from groupy.gconv.gconv_tensorflow import utils
 from groupy.gconv.gconv_tensorflow.transform_filter import transform_filter_2d_nhwc
-from groupy.gconv.make_gconv_indices import make_c4_z2_indices, make_c4_p4_indices,\
-    make_d4_z2_indices, make_d4_p4m_indices, flatten_indices
+from groupy.gconv import make_gconv_indices as idx
+from groupy.hexa import mask
 
 
 class SplitGConv2D(tf.layers.Layer):
@@ -30,7 +30,7 @@ class SplitGConv2D(tf.layers.Layer):
                                            **kwargs)
         self.filters = filters
         if not isinstance(kernel_size, int):
-            # TODO: Also handle tuples and check if non square kernels are supported.
+            # TODO: Also handle tuples with equal values.
             raise ValueError('kernel_size must be a integer. Received: ' + str(kernel_size) + ' of type ' + str(type(kernel_size)))
         self.kernel_size = kernel_size
         self.strides = utils.normalize_tuple(strides, 2, 'strides')
@@ -48,6 +48,9 @@ class SplitGConv2D(tf.layers.Layer):
         self.bias_constraint = bias_constraint
         self.input_spec = tf.layers.InputSpec(ndim=4)
     
+    def get_masks(self, input_shape):
+        return None, None
+    
     @property
     def input_stabilizer_size(self):
         raise NotImplementedError('Subclasses should implement this!')
@@ -59,9 +62,20 @@ class SplitGConv2D(tf.layers.Layer):
     @property    
     def transformation_indices(self):
         raise NotImplementedError('Subclasses should implement this!')
+    
+    @property
+    def masked_kernel_constraint(self):
+        if self.kernel_mask is not None and self.kernel_constraint is not None:
+            return lambda x: self.kernel_constraint(x * self.kernel_mask)
+        elif self.kernel_mask is not None:
+            return lambda x: x * self.kernel_mask
+        elif self.kernel_constraint is not None:
+            return self.kernel_constraint
+        return None
 
     def build(self, input_shape):
         input_shape = tf.TensorShape(input_shape)
+        self.kernel_mask, self.output_mask = self.get_masks(input_shape)
         channel_axis = -1 if self.data_format == 'NHWC' else 1
         if input_shape[channel_axis].value is None:
             raise ValueError('The channel dimension of the inputs should be defined. Found `None`.')
@@ -74,7 +88,7 @@ class SplitGConv2D(tf.layers.Layer):
                                         shape=kernel_shape,
                                         initializer=self.kernel_initializer,
                                         regularizer=self.kernel_regularizer,
-                                        constraint=self.kernel_constraint,
+                                        constraint=self.masked_kernel_constraint,
                                         trainable=True,
                                         dtype=self.dtype)
                                         
@@ -126,6 +140,9 @@ class SplitGConv2D(tf.layers.Layer):
               #outputs = array_ops.reshape(outputs_4d, outputs_shape)
           #else:
             #outputs = nn.bias_add(outputs, self.bias, data_format='NHWC')
+        
+        if self.output_mask is not None:
+            outputs *= self.output_mask
 
         if self.activation is not None:
             return self.activation(outputs)
@@ -139,10 +156,10 @@ class SplitGConv2D(tf.layers.Layer):
             for i in range(len(space)):
                 new_dim = utils.conv_output_length(
                     space[i],
-                    self.kernel_size[i],
+                    self.kernel_size,
                     padding=self.padding,
                     stride=self.strides[i],
-                    dilation=self.dilation_rate[i])
+                    dilation=1)
                 new_space.append(new_dim)
             return tf.TensorShape([input_shape[0]] + new_space + [self.filters * self.output_stabilizer_size])
         else:
@@ -151,12 +168,21 @@ class SplitGConv2D(tf.layers.Layer):
             for i in range(len(space)):
                 new_dim = utils.conv_output_length(
                     space[i],
-                    self.kernel_size[i],
+                    self.kernel_size,
                     padding=self.padding,
                     stride=self.strides[i],
-                    dilation=self.dilation_rate[i])
+                    dilation=1)
                 new_space.append(new_dim)
             return tf.TensorShape([input_shape[0], self.filters * self.output_stabilizer_size] + new_space)
+
+
+class SplitHexGConv2D(SplitGConv2D):
+    def get_masks(self, input_shape):
+        kernel_mask = tf.convert_to_tensor(mask.hexagon_axial(self.kernel_size)[None, ..., None], dtype=self.dtype, name='kernel_mask')
+        output_shape = self.compute_output_shape(input_shape).as_list()
+        ny, nx = output_shape[1:3] if self.data_format == 'NHWC' else output_shape[-2:]
+        output_mask = tf.convert_to_tensor(mask.square_axial(ny, nx)[None, ..., None], dtype=self.dtype, name='output_mask')
+        return kernel_mask, output_mask
 
 
 class P4ConvZ2(SplitGConv2D):
@@ -170,7 +196,7 @@ class P4ConvZ2(SplitGConv2D):
     
     @property    
     def transformation_indices(self):
-        return flatten_indices(make_c4_z2_indices(ksize=self.kernel_size))
+        return idx.flatten_indices(idx.make_c4_z2_indices(ksize=self.kernel_size))
         
 
 class P4ConvP4(SplitGConv2D):        
@@ -184,7 +210,7 @@ class P4ConvP4(SplitGConv2D):
     
     @property    
     def transformation_indices(self):
-        return flatten_indices(make_c4_p4_indices(ksize=self.kernel_size))
+        return idx.flatten_indices(idx.make_c4_p4_indices(ksize=self.kernel_size))
 
 
 class P4MConvZ2(SplitGConv2D):
@@ -198,7 +224,7 @@ class P4MConvZ2(SplitGConv2D):
     
     @property    
     def transformation_indices(self):
-        return flatten_indices(make_d4_z2_indices(ksize=self.kernel_size))
+        return idx.flatten_indices(idx.make_d4_z2_indices(ksize=self.kernel_size))
     
 
 class P4MConvP4M(SplitGConv2D):
@@ -212,4 +238,74 @@ class P4MConvP4M(SplitGConv2D):
     
     @property    
     def transformation_indices(self):
-        return flatten_indices(make_d4_p4m_indices(ksize=self.kernel_size))
+        return idx.flatten_indices(idx.make_d4_p4m_indices(ksize=self.kernel_size))
+
+
+class Z2ConvZ2Axial(SplitHexGConv2D):
+    @property
+    def input_stabilizer_size(self):
+        return 1
+    
+    @property
+    def output_stabilizer_size(self):
+        return 1
+    
+    @property
+    def transformation_indices(self):
+        return idx.flatten_indices(idx.make_c6_z2_indices(ksize=self.kernel_size))
+
+
+class P6ConvZ2Axial(SplitHexGConv2D):
+    @property
+    def input_stabilizer_size(self):
+        return 1
+    
+    @property
+    def output_stabilizer_size(self):
+        return 6
+    
+    @property
+    def transformation_indices(self):
+        return idx.flatten_indices(idx.make_c6_z2_indices(ksize=self.kernel_size))
+        
+
+class P6ConvP6Axial(SplitHexGConv2D):
+    @property
+    def input_stabilizer_size(self):
+        return 6
+    
+    @property
+    def output_stabilizer_size(self):
+        return 6
+    
+    @property
+    def transformation_indices(self):
+        return idx.flatten_indices(idx.make_c6_p6_indices(ksize=self.kernel_size))
+
+
+class P6MConvZ2Axial(SplitHexGConv2D):
+    @property
+    def input_stabilizer_size(self):
+        return 1
+    
+    @property
+    def output_stabilizer_size(self):
+        return 12
+    
+    @property
+    def transformation_indices(self):
+        return idx.flatten_indices(idx.make_d6_z2_indices(ksize=self.kernel_size))
+
+
+class P6MConvZ2Axial(SplitHexGConv2D):
+    @property
+    def input_stabilizer_size(self):
+        return 12
+    
+    @property
+    def output_stabilizer_size(self):
+        return 12
+    
+    @property
+    def transformation_indices(self):
+        return idx.flatten_indices(idx.make_d6_p6m_indices(ksize=self.kernel_size))
