@@ -1,8 +1,7 @@
-
 import numpy as np
 import tensorflow as tf
 
-from groupy.gconv.gconv_tensorflow.splitgconv2d import gconv2d_util, gconv2d
+from groupy.gconv.gconv_tensorflow.layers import P4ConvZ2, P4ConvP4, P4MConvZ2, P4MConvP4M
 from groupy.gfunc.z2func_array import Z2FuncArray
 from groupy.gfunc.p4func_array import P4FuncArray
 from groupy.gfunc.p4mfunc_array import P4MFuncArray
@@ -12,36 +11,31 @@ import groupy.garray.D4_array as D4a
 
 def test_c4_z2_conv_equivariance():
     im = np.random.randn(2, 5, 5, 1)
-    x, y = make_graph('Z2', 'C4')
+    x, y = make_graph(P4ConvZ2, 1)
     check_equivariance(im, x, y, Z2FuncArray, P4FuncArray, C4a)
 
 
 def test_c4_c4_conv_equivariance():
     im = np.random.randn(2, 5, 5, 4)
-    x, y = make_graph('C4', 'C4')
+    x, y = make_graph(P4ConvP4, 4)
     check_equivariance(im, x, y, P4FuncArray, P4FuncArray, C4a)
 
 
 def test_d4_z2_conv_equivariance():
     im = np.random.randn(2, 5, 5, 1)
-    x, y = make_graph('Z2', 'D4')
+    x, y = make_graph(P4MConvZ2, 1)
     check_equivariance(im, x, y, Z2FuncArray, P4MFuncArray, D4a)
 
 
 def test_d4_d4_conv_equivariance():
     im = np.random.randn(2, 5, 5, 8)
-    x, y = make_graph('D4', 'D4')
+    x, y = make_graph(P4MConvP4M, 8)
     check_equivariance(im, x, y, P4MFuncArray, P4MFuncArray, D4a)
 
 
-def make_graph(h_input, h_output):
-    gconv_indices, gconv_shape_info, w_shape = gconv2d_util(
-        h_input=h_input, h_output=h_output, in_channels=1, out_channels=1, ksize=3)
-    nti = gconv_shape_info[-2]
+def make_graph(layer, nti):
     x = tf.placeholder(tf.float32, [None, 5, 5, 1 * nti])
-    w = tf.Variable(tf.truncated_normal(w_shape, stddev=1.))
-    y = gconv2d(input=x, filter=w, strides=[1, 1, 1, 1], padding='SAME',
-                gconv_indices=gconv_indices, gconv_shape_info=gconv_shape_info)
+    y = layer(filters=1, kernel_size=3, use_bias=False, padding='same')(x)
     return x, y
 
 
@@ -55,11 +49,10 @@ def check_equivariance(im, input, output, input_array, output_array, point_group
 
     # Compute
     init = tf.global_variables_initializer()
-    sess = tf.Session()
-    sess.run(init)
-    yx = sess.run(output, feed_dict={input: im})
-    yrx = sess.run(output, feed_dict={input: im1})
-    sess.close()
+    with tf.Session() as sess:
+        sess.run(init)
+        yx = sess.run(output, feed_dict={input: im})
+        yrx = sess.run(output, feed_dict={input: im1})
 
     # Transform the computed feature maps
     fmap1_garray = output_array(yrx.transpose((0, 3, 1, 2)))
