@@ -47,22 +47,22 @@ class SplitGConv2D(tf.layers.Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
         self.input_spec = tf.layers.InputSpec(ndim=4)
-    
+
     def get_masks(self, input_shape):
         return None, None
-    
+
     @property
     def input_stabilizer_size(self):
         raise NotImplementedError('Subclasses should implement this!')
-    
+
     @property
     def output_stabilizer_size(self):
         raise NotImplementedError('Subclasses should implement this!')
-    
-    @property    
+
+    @property
     def transformation_indices(self):
         raise NotImplementedError('Subclasses should implement this!')
-    
+
     @property
     def masked_kernel_constraint(self):
         if self.kernel_mask is not None and self.kernel_constraint is not None:
@@ -81,7 +81,7 @@ class SplitGConv2D(tf.layers.Layer):
             raise ValueError('The channel dimension of the inputs should be defined. Found `None`.')
         input_dim = input_shape[channel_axis].value
         kernel_shape = (self.kernel_size, self.kernel_size, input_dim, self.filters)
-        
+
         gconv_shape_info = (self.filters, self.output_stabilizer_size, input_dim // self.input_stabilizer_size, self.input_stabilizer_size, self.kernel_size)
 
         self.kernel = self.add_variable(name='kernel',
@@ -91,18 +91,18 @@ class SplitGConv2D(tf.layers.Layer):
                                         constraint=self.masked_kernel_constraint,
                                         trainable=True,
                                         dtype=self.dtype)
-                                        
+
         self.transformed_kernel = transform_filter_2d_nhwc(w=self.kernel, flat_indices=self.transformation_indices, shape_info=gconv_shape_info)
-        
+
         if self.use_bias:
             raise NotImplemented('Bias not supported yet!')
-            #self.bias = self.add_variable(name='bias',
-                                          #shape=(self.filters,),
-                                          #initializer=self.bias_initializer,
-                                          #regularizer=self.bias_regularizer,
-                                          #constraint=self.bias_constraint,
-                                          #trainable=True,
-                                          #dtype=self.dtype)
+            # self.bias = self.add_variable(name='bias',
+            #                               shape=(self.filters,),
+            #                               initializer=self.bias_initializer,
+            #                               regularizer=self.bias_regularizer,
+            #                               constraint=self.bias_constraint,
+            #                               trainable=True,
+            #                               dtype=self.dtype)
         else:
             self.bias = None
         self.input_spec = tf.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})
@@ -120,27 +120,27 @@ class SplitGConv2D(tf.layers.Layer):
 
         if self.use_bias:
             raise NotImplemented('Bias not supported yet!')
-          #if self.data_format == 'channels_first':
-            #if self.rank == 1:
-              ## nn.bias_add does not accept a 1D input tensor.
-              #bias = array_ops.reshape(self.bias, (1, self.filters, 1))
-              #outputs += bias
-            #if self.rank == 2:
-              #outputs = nn.bias_add(outputs, self.bias, data_format='NCHW')
-            #if self.rank == 3:
-              ## As of Mar 2017, direct addition is significantly slower than
-              ## bias_add when computing gradients. To use bias_add, we collapse Z
-              ## and Y into a single dimension to obtain a 4D input tensor.
-              #outputs_shape = outputs.shape.as_list()
-              #outputs_4d = array_ops.reshape(outputs,
-                                             #[outputs_shape[0], outputs_shape[1],
-                                              #outputs_shape[2] * outputs_shape[3],
-                                              #outputs_shape[4]])
-              #outputs_4d = nn.bias_add(outputs_4d, self.bias, data_format='NCHW')
-              #outputs = array_ops.reshape(outputs_4d, outputs_shape)
-          #else:
-            #outputs = nn.bias_add(outputs, self.bias, data_format='NHWC')
-        
+            # if self.data_format == 'channels_first':
+            # if self.rank == 1:
+            #   # nn.bias_add does not accept a 1D input tensor.
+            #   bias = array_ops.reshape(self.bias, (1, self.filters, 1))
+            #   outputs += bias
+            # if self.rank == 2:
+            #   outputs = nn.bias_add(outputs, self.bias, data_format='NCHW')
+            # if self.rank == 3:
+            #   # As of Mar 2017, direct addition is significantly slower than
+            #   # bias_add when computing gradients. To use bias_add, we collapse Z
+            #   # and Y into a single dimension to obtain a 4D input tensor.
+            #   outputs_shape = outputs.shape.as_list()
+            #   outputs_4d = array_ops.reshape(outputs,
+            #                                  [outputs_shape[0], outputs_shape[1],
+            #                                   outputs_shape[2] * outputs_shape[3],
+            #                                   outputs_shape[4]])
+            #   outputs_4d = nn.bias_add(outputs_4d, self.bias, data_format='NCHW')
+            #   outputs = array_ops.reshape(outputs_4d, outputs_shape)
+            # else:
+            # outputs = nn.bias_add(outputs, self.bias, data_format='NHWC')
+
         if self.output_mask is not None:
             outputs *= self.output_mask
 
@@ -189,17 +189,17 @@ class P4ConvZ2(SplitGConv2D):
     @property
     def input_stabilizer_size(self):
         return 1
-    
+
     @property
     def output_stabilizer_size(self):
         return 4
-    
-    @property    
+
+    @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_c4_z2_indices(ksize=self.kernel_size))
-        
 
-class P4ConvP4(SplitGConv2D):        
+
+class P4ConvP4(SplitGConv2D):
     @property
     def input_stabilizer_size(self):
         return 4
@@ -207,8 +207,8 @@ class P4ConvP4(SplitGConv2D):
     @property
     def output_stabilizer_size(self):
         return 4
-    
-    @property    
+
+    @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_c4_p4_indices(ksize=self.kernel_size))
 
@@ -217,26 +217,26 @@ class P4MConvZ2(SplitGConv2D):
     @property
     def input_stabilizer_size(self):
         return 1
-    
+
     @property
     def output_stabilizer_size(self):
         return 8
-    
-    @property    
+
+    @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_d4_z2_indices(ksize=self.kernel_size))
-    
+
 
 class P4MConvP4M(SplitGConv2D):
     @property
     def input_stabilizer_size(self):
         return 8
-    
+
     @property
     def output_stabilizer_size(self):
         return 8
-    
-    @property    
+
+    @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_d4_p4m_indices(ksize=self.kernel_size))
 
@@ -245,11 +245,11 @@ class Z2ConvZ2Axial(SplitHexGConv2D):
     @property
     def input_stabilizer_size(self):
         return 1
-    
+
     @property
     def output_stabilizer_size(self):
         return 1
-    
+
     @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_c6_z2_indices(ksize=self.kernel_size))
@@ -259,25 +259,25 @@ class P6ConvZ2Axial(SplitHexGConv2D):
     @property
     def input_stabilizer_size(self):
         return 1
-    
+
     @property
     def output_stabilizer_size(self):
         return 6
-    
+
     @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_c6_z2_indices(ksize=self.kernel_size))
-        
+
 
 class P6ConvP6Axial(SplitHexGConv2D):
     @property
     def input_stabilizer_size(self):
         return 6
-    
+
     @property
     def output_stabilizer_size(self):
         return 6
-    
+
     @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_c6_p6_indices(ksize=self.kernel_size))
@@ -287,25 +287,25 @@ class P6MConvZ2Axial(SplitHexGConv2D):
     @property
     def input_stabilizer_size(self):
         return 1
-    
+
     @property
     def output_stabilizer_size(self):
         return 12
-    
+
     @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_d6_z2_indices(ksize=self.kernel_size))
 
 
-class P6MConvZ2Axial(SplitHexGConv2D):
+class P6MConvP6MAxial(SplitHexGConv2D):
     @property
     def input_stabilizer_size(self):
         return 12
-    
+
     @property
     def output_stabilizer_size(self):
         return 12
-    
+
     @property
     def transformation_indices(self):
         return idx.flatten_indices(idx.make_d6_p6m_indices(ksize=self.kernel_size))

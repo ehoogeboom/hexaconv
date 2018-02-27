@@ -3,7 +3,7 @@ def normalize_padding(value):
     if padding not in {'valid', 'same'}:
         raise ValueError('The `padding` argument must be one of "valid", "same". Received: ' + str(padding))
     return padding
-    
+
 
 def normalize_tuple(value, n, name):
     """Transforms a single integer or iterable of integers into an integer tuple.
@@ -39,7 +39,7 @@ def normalize_tuple(value, n, name):
                                  'including element ' + str(single_value) + ' of type' +
                                  ' ' + str(type(single_value)))
         return value_tuple
-    
+
 
 def conv_output_length(input_length, filter_size, padding, stride, dilation=1):
     """Determines output length of a convolution given input length.
