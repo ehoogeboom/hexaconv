@@ -129,7 +129,7 @@ def paper_plots(i=0, ll=1., ul=0.4, cmap1=cm.Blues, cmap2=cm.Greens):
         rf_f = rf * f
         return rf_f.v
 
-    print p4m_fmaps.shape
+    print(p4m_fmaps.shape)
     r_p4m_fmaps = rotate_flip_p4m_func(p4m_fmaps.transpose(3, 0, 1, 2), 0, 1).transpose(1, 2, 3, 0)
     from groupy.plot.plot_p4m import plot_p4m
     # imf.reshape(2, 4, 7, 7), rlabels = 'cayley2', fontsize = 10,

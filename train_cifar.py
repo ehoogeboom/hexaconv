@@ -168,7 +168,7 @@ def train(
 
     # Get number of parameters
     if hasattr(model, 'number_of_params'):
-        print "Computing number of parameters with specialized script"
+        print("Computing number of parameters with specialized script")
         num_params = model.number_of_params()
         naive_params = sum([p.data.size for p in model.params()])
         logging.info('Number of parameters: {:.2f} (Original: {})'.format(
@@ -290,8 +290,8 @@ if __name__ == '__main__':
     with cp.cuda.Device(vargs['gpu']):
         val_error, model = train(logme=vargs, **vargs)
 
-    print 'Finished training'
-    print 'Final validation error:', val_error
-    print 'Saving model...'
+    print('Finished training')
+    print('Final validation error:', val_error)
+    print('Saving model...')
     import chainer.serializers as sl
     sl.save_hdf5('./my.model', model)

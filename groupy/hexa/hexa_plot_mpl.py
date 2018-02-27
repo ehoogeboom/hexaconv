@@ -165,7 +165,7 @@ def hexa_plot(f):
     fig=plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
 
-    print x.shape, y.shape, f.shape
+    print(x.shape, y.shape, f.shape)
     # Set gridsize just to make them visually large
     image = plt.hexbin(
             x.flatten(), y.flatten(),

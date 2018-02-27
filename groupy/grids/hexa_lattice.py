@@ -138,7 +138,7 @@ def hexa_manhattan_dist(n11, n12, n21, n22):
 
 
 def zigzaghexa_manhattan_dist(m11, m12, m21, m22):
-    print 'untested'  # TODO
+    print('untested')  # TODO
     n11, n12 = zigzaghexa2hexa(m11, m12)
     n21, n22 = zigzaghexa2hexa(m21, m22)
     return hexa_manhattan_dist(n11, n12, n21, n22)
@@ -157,7 +157,7 @@ def plot_c2o():
     m1, m2 = np.meshgrid(np.arange(minm, maxm + 1), np.arange(minm, maxm + 1))
 
     x, y = zigzaghexa2cartesian(m1, m2)
-    print x.shape
+    print(x.shape)
 
     plt.scatter(x, y, c=m1)
     plt.figure()
