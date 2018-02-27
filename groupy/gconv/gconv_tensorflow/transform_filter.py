@@ -20,7 +20,7 @@ def transform_filter_2d_nhwc(w, flat_indices, shape_info, validate_indices=True)
     Index arrays for various groups can be created with functions in groupy.gconv.make_gconv_indices.
     For example: flat_inds = flatten_indices(make_d4_z2_indices(ksize=3))
 
-    The output filter bank transformed_w has shape (no * nto, ni * nti, n, n),
+    The output filter bank transformed_w has shape (n, n, ni * nti, no * nto),
     (so there are nto times as many filters in the output as we had in the input w)
     """
 
