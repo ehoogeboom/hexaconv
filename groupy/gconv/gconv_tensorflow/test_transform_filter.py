@@ -13,7 +13,8 @@ from groupy.gconv.make_gconv_indices import make_c4_z2_indices, make_c4_p4_indic
 def tf_trans_filter_nhwc(w, inds):
     flat_inds = flatten_indices(inds)
     no, ni, nti, n, _ = w.shape
-    shape_info = (no, inds.shape[0], ni, nti, n)
+    nto = inds.shape[0]
+    shape_info = (no, nto, ni, nti, n)
 
     w = w.transpose((3, 4, 2, 1, 0)).reshape((n, n, nti * ni, no))
 
@@ -23,7 +24,6 @@ def tf_trans_filter_nhwc(w, inds):
     with tf.Session() as sess:
         rwt = sess.run(rwt)
 
-    nto = inds.shape[0]
     rwt = rwt.transpose(3, 2, 0, 1).reshape(no, nto, ni, nti, n, n)
     return rwt
 
@@ -31,7 +31,8 @@ def tf_trans_filter_nhwc(w, inds):
 def tf_trans_filter_nchw(w, inds):
     flat_inds = flatten_indices(inds)
     no, ni, nti, n, _ = w.shape
-    shape_info = (no, inds.shape[0], ni, nti, n)
+    nto = inds.shape[0]
+    shape_info = (no, nto, ni, nti, n)
 
     w = w.reshape(no, ni * nti, n, n)
 
@@ -41,7 +42,6 @@ def tf_trans_filter_nchw(w, inds):
     with tf.Session() as sess:
         rwt = sess.run(rwt)
 
-    nto = inds.shape[0]
     rwt = rwt.reshape(no, nto, ni, nti, n, n)
     return rwt
 
@@ -71,7 +71,8 @@ def ch_trans_filter(w, inds):
 def test_transforms(make_indices, nti, transform, ksize):
     inds = make_indices(ksize=ksize)
 
-    w = np.random.randn(np.random.randint(1, 10), np.random.randint(1, 10), nti, ksize, ksize)
+    no, ni = np.random.randint(1, 10, size=2)
+    w = np.random.randn(no, ni, nti, ksize, ksize)
 
     rt = transform(w, inds)
     rc = ch_trans_filter(w, inds)
