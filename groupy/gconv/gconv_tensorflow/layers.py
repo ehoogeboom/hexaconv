@@ -6,13 +6,12 @@ from groupy.hexa import mask
 
 
 class SplitGConv2D(tf.layers.Layer):
-    # TODO: Conform with tf.layers and use data_format={channels_last, channels_first}
     def __init__(self,
                  filters,
                  kernel_size,
                  strides=(1, 1),
                  padding='valid',
-                 data_format='NHWC',
+                 data_format='channels_last',
                  activation=None,
                  use_bias=True,
                  kernel_initializer=None,
@@ -30,14 +29,13 @@ class SplitGConv2D(tf.layers.Layer):
                                            **kwargs)
         self.filters = filters
         if not isinstance(kernel_size, int):
-            # TODO: Also handle tuples with equal values.
             raise ValueError('kernel_size must be a integer. Received: ' + str(kernel_size) + ' of type ' + str(type(kernel_size)))
         self.kernel_size = kernel_size
         self.strides = utils.normalize_tuple(strides, 2, 'strides')
         self.padding = utils.normalize_padding(padding)
-        if data_format != 'NHWC':
-            raise NotImplemented('Currently only NHWC data_format is supported. Received:' + str(data_format))
-        self.data_format = data_format
+        if data_format != 'channels_last':
+            raise NotImplemented('Currently only channels_last data_format is supported. Received:' + str(data_format))
+        self.data_format = utils.convert_data_format(data_format)
         self.activation = activation
         self.use_bias = use_bias
         self.kernel_initializer = kernel_initializer

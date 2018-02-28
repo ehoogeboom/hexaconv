@@ -1,3 +1,11 @@
+def convert_data_format(data_format):
+    if data_format == 'channels_last':
+        return 'NHWC'
+    elif data_format == 'channels_first':
+        return 'NCHW'
+    raise ValueError('Invalid data_format:', data_format)
+
+
 def normalize_padding(value):
     padding = value.lower()
     if padding not in {'valid', 'same'}:

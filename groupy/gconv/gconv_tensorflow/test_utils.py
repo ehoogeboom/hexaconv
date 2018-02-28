@@ -2,6 +2,14 @@ import pytest
 from groupy.gconv.gconv_tensorflow import utils
 
 
+def test_convert_data_format():
+    assert utils.convert_data_format('channels_first') == 'NCHW'
+    assert utils.convert_data_format('channels_last') == 'NHWC'
+
+    with pytest.raises(ValueError):
+        utils.convert_data_format('invalid',)
+
+
 def test_normalize_tuple():
     assert utils.normalize_tuple(2, n=3, name='strides') == (2, 2, 2)
     assert utils.normalize_tuple((2, 1, 2), n=3, name='strides') == (2, 1, 2)
