@@ -29,6 +29,26 @@ def test_equivariance(layer, input_array, output_array, point_group, ndim, filte
     )
 
 
+@pytest.mark.parametrize('layer_1, layer_2,input_array,output_array,point_group', [
+    (P4ConvZ2, P4ConvP4, Z2FuncArray, P4FuncArray, c4a),
+    (P4MConvZ2, P4MConvP4M, Z2FuncArray, P4MFuncArray, d4a),
+])
+@pytest.mark.parametrize('filters', [1, 3])
+def test_net_equivariance(layer_1, layer_2, input_array, output_array, point_group, filters):
+    im = np.random.randn(1, 11, 11, 1).astype('float32')
+    check_equivariance(
+        im=im,
+        layers=[
+            layer_1(4, 3, use_bias=False),
+            layer_2(filters, 3, use_bias=False)
+            ],
+        input_array=input_array,
+        output_array=output_array,
+        point_group=point_group,
+        filters=filters
+    )
+
+
 def check_equivariance(im, layers, input_array, output_array, point_group, filters):
     # Transform the image
     f = input_array(im.transpose((0, 3, 1, 2)))  # convert to NCHW
