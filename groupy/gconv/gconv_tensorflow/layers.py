@@ -63,16 +63,6 @@ class SplitGConv2D(tf.layers.Layer):
     def transformation_indices(self):
         raise NotImplementedError('Subclasses should implement this!')
 
-    @property
-    def masked_kernel_constraint(self):
-        if self.kernel_mask is not None and self.kernel_constraint is not None:
-            return lambda x: self.kernel_constraint(x * self.kernel_mask)
-        elif self.kernel_mask is not None:
-            return lambda x: x * self.kernel_mask
-        elif self.kernel_constraint is not None:
-            return self.kernel_constraint
-        return None
-
     def build(self, input_shape):
         input_shape = tf.TensorShape(input_shape)
         self.kernel_mask, self.output_mask = self.get_masks(input_shape)
@@ -88,11 +78,14 @@ class SplitGConv2D(tf.layers.Layer):
                                         shape=kernel_shape,
                                         initializer=self.kernel_initializer,
                                         regularizer=self.kernel_regularizer,
-                                        constraint=self.masked_kernel_constraint,
+                                        constraint=self.kernel_constraint,
                                         trainable=True,
                                         dtype=self.dtype)
 
-        self.transformed_kernel = transform_filter_2d_nhwc(w=self.kernel, flat_indices=self.transformation_indices, shape_info=gconv_shape_info)
+        self.transformed_kernel = transform_filter_2d_nhwc(
+            self.kernel_mask * self.kernel if self.kernel_mask is not None else self.kernel,
+            flat_indices=self.transformation_indices,
+            shape_info=gconv_shape_info)
 
         if self.use_bias:
             raise NotImplemented('Bias not supported yet!')
@@ -178,7 +171,7 @@ class SplitGConv2D(tf.layers.Layer):
 
 class SplitHexGConv2D(SplitGConv2D):
     def get_masks(self, input_shape):
-        kernel_mask = tf.convert_to_tensor(mask.hexagon_axial(self.kernel_size)[None, ..., None], dtype=self.dtype, name='kernel_mask')
+        kernel_mask = tf.convert_to_tensor(mask.hexagon_axial(self.kernel_size)[..., None, None], dtype=self.dtype, name='kernel_mask')
         output_shape = self.compute_output_shape(input_shape).as_list()
         ny, nx = output_shape[1:3] if self.data_format == 'NHWC' else output_shape[-2:]
         output_mask = tf.convert_to_tensor(mask.square_axial(ny, nx)[None, ..., None], dtype=self.dtype, name='output_mask')
