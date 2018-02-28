@@ -6,6 +6,9 @@ from groupy.hexa import mask
 
 
 class SplitGConv2D(tf.layers.Layer):
+    kernel_mask = None
+    output_mask = None
+
     def __init__(self,
                  filters,
                  kernel_size,
@@ -113,11 +116,11 @@ class SplitGConv2D(tf.layers.Layer):
                 raise NotImplemented('Currently only NHWC data_format is supported. Received:' + str(self.data_format))
 
             outputs_shape = outputs.get_shape().as_list()
-            outputs_expanded = tf.reshape(outputs, outputs_shape[:-1] + [self.filters, self.output_stabilizer_size])
+            outputs_expanded = tf.reshape(outputs, [-1, outputs_shape[1], outputs_shape[2], self.filters, self.output_stabilizer_size])
             outputs_expanded = tf.transpose(outputs_expanded, (0, 1, 2, 4, 3))
             outputs_expanded = tf.nn.bias_add(outputs_expanded, self.bias, data_format='NHWC')
             outputs_expanded = tf.transpose(outputs_expanded, (0, 1, 2, 4, 3))
-            outputs = tf.reshape(outputs_expanded, outputs_shape)
+            outputs = tf.reshape(outputs_expanded, [-1] + outputs_shape[1:])
 
         if self.output_mask is not None:
             outputs *= self.output_mask
