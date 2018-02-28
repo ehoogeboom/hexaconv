@@ -86,14 +86,13 @@ class SplitGConv2D(tf.layers.Layer):
             shape_info=gconv_shape_info)
 
         if self.use_bias:
-            raise NotImplemented('Bias not supported yet!')
-            # self.bias = self.add_variable(name='bias',
-            #                               shape=(self.filters,),
-            #                               initializer=self.bias_initializer,
-            #                               regularizer=self.bias_regularizer,
-            #                               constraint=self.bias_constraint,
-            #                               trainable=True,
-            #                               dtype=self.dtype)
+            self.bias = self.add_variable(name='bias',
+                                          shape=(self.filters,),
+                                          initializer=self.bias_initializer,
+                                          regularizer=self.bias_regularizer,
+                                          constraint=self.bias_constraint,
+                                          trainable=True,
+                                          dtype=self.dtype)
         else:
             self.bias = None
         self.input_spec = tf.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})
@@ -110,27 +109,15 @@ class SplitGConv2D(tf.layers.Layer):
                                name=self.name)
 
         if self.use_bias:
-            raise NotImplemented('Bias not supported yet!')
-            # if self.data_format == 'channels_first':
-            # if self.rank == 1:
-            #   # nn.bias_add does not accept a 1D input tensor.
-            #   bias = array_ops.reshape(self.bias, (1, self.filters, 1))
-            #   outputs += bias
-            # if self.rank == 2:
-            #   outputs = nn.bias_add(outputs, self.bias, data_format='NCHW')
-            # if self.rank == 3:
-            #   # As of Mar 2017, direct addition is significantly slower than
-            #   # bias_add when computing gradients. To use bias_add, we collapse Z
-            #   # and Y into a single dimension to obtain a 4D input tensor.
-            #   outputs_shape = outputs.shape.as_list()
-            #   outputs_4d = array_ops.reshape(outputs,
-            #                                  [outputs_shape[0], outputs_shape[1],
-            #                                   outputs_shape[2] * outputs_shape[3],
-            #                                   outputs_shape[4]])
-            #   outputs_4d = nn.bias_add(outputs_4d, self.bias, data_format='NCHW')
-            #   outputs = array_ops.reshape(outputs_4d, outputs_shape)
-            # else:
-            # outputs = nn.bias_add(outputs, self.bias, data_format='NHWC')
+            if self.data_format != 'NHWC':
+                raise NotImplemented('Currently only NHWC data_format is supported. Received:' + str(self.data_format))
+
+            outputs_shape = outputs.get_shape().as_list()
+            outputs_expanded = tf.reshape(outputs, outputs_shape[:-1] + [self.filters, self.output_stabilizer_size])
+            outputs_expanded = tf.transpose(outputs_expanded, (0, 1, 2, 4, 3))
+            outputs_expanded = tf.nn.bias_add(outputs_expanded, self.bias, data_format='NHWC')
+            outputs_expanded = tf.transpose(outputs_expanded, (0, 1, 2, 4, 3))
+            outputs = tf.reshape(outputs_expanded, outputs_shape)
 
         if self.output_mask is not None:
             outputs *= self.output_mask
