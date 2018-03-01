@@ -1,3 +1,4 @@
+"""Contains the group equivariant convolutional tensorflow layers."""
 import tensorflow as tf
 from groupy.gconv.gconv_tensorflow import utils
 from groupy.gconv.gconv_tensorflow.transform_filter import transform_filter_2d_nhwc
@@ -6,6 +7,56 @@ from groupy.hexa import mask
 
 
 class SplitGConv2D(tf.layers.Layer):
+    """Group convolution base class for split plane groups.
+
+    A plane group (aka wallpaper group) is a group of distance-preserving transformations that includes two independent
+    discrete translations.
+
+    A group is called split (or symmorphic) if every element in this group can be written as the composition of an
+    element from the "stabilizer of the origin" and a translation. The stabilizer of the origin consists of those
+    transformations in the group that leave the origin fixed. For example, the stabilizer in the rotation-translation
+    group p4 is the set of rotations around the origin, which is (isomorphic to) the group C4.
+
+    Most plane groups are split, but some include glide-reflection generators; such groups are not split.
+    For split groups G, the G-conv can be split into a "filter transform" and "translational convolution" part.
+
+    Different subclasses of this class implement the filter transform for various groups, while this class implements
+    the common functionality.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     kernel_mask = None
     output_mask = None
 
@@ -158,6 +209,42 @@ class SplitGConv2D(tf.layers.Layer):
 
 
 class SplitHexGConv2D(SplitGConv2D):
+    """Group convolution base class for P6/P6M groups.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     def get_masks(self, input_shape):
         kernel_mask = tf.convert_to_tensor(mask.hexagon_axial(self.kernel_size)[..., None, None], dtype=self.dtype, name='kernel_mask')
         output_shape = self.compute_output_shape(input_shape).as_list()
@@ -167,6 +254,42 @@ class SplitHexGConv2D(SplitGConv2D):
 
 
 class P4ConvZ2(SplitGConv2D):
+    """Z2 to P4 group convolution layer.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 1
@@ -181,6 +304,42 @@ class P4ConvZ2(SplitGConv2D):
 
 
 class P4ConvP4(SplitGConv2D):
+    """P4 to P4 group convolution layer.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 4
@@ -195,6 +354,42 @@ class P4ConvP4(SplitGConv2D):
 
 
 class P4MConvZ2(SplitGConv2D):
+    """Z2 to P4M group convolution layer.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 1
@@ -209,6 +404,42 @@ class P4MConvZ2(SplitGConv2D):
 
 
 class P4MConvP4M(SplitGConv2D):
+    """Z4M to P4M group convolution layer.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 8
@@ -223,6 +454,42 @@ class P4MConvP4M(SplitGConv2D):
 
 
 class Z2ConvZ2Axial(SplitHexGConv2D):
+    """Z2 to Z2 group convolution layer on a hexagonal grid using axial coordinates.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 1
@@ -237,6 +504,42 @@ class Z2ConvZ2Axial(SplitHexGConv2D):
 
 
 class P6ConvZ2Axial(SplitHexGConv2D):
+    """Z2 to P6 group convolution layer on a hexagonal grid using axial coordinates.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 1
@@ -251,6 +554,42 @@ class P6ConvZ2Axial(SplitHexGConv2D):
 
 
 class P6ConvP6Axial(SplitHexGConv2D):
+    """P6 to P6 group convolution layer on a hexagonal grid using axial coordinates.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 6
@@ -265,6 +604,42 @@ class P6ConvP6Axial(SplitHexGConv2D):
 
 
 class P6MConvZ2Axial(SplitHexGConv2D):
+    """Z2 to P6M group convolution layer on a hexagonal grid using axial coordinates.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
+
     @property
     def input_stabilizer_size(self):
         return 1
@@ -279,6 +654,41 @@ class P6MConvZ2Axial(SplitHexGConv2D):
 
 
 class P6MConvP6MAxial(SplitHexGConv2D):
+    """P6M to P6M group convolution layer on a hexagonal grid using axial coordinates.
+
+    This layer creates a convolution kernel that is convolved
+    (actually cross-correlated) with the layer input to produce a tensor of
+    outputs. If `use_bias` is True, a bias vector is created and added to the outputs.
+    Finally, if `activation` is not `None`, it is applied to the outputs as well.
+
+    Arguments:
+    filters: Integer, the dimensionality of the output space (i.e. the number of filters in the convolution).
+    kernel_size: An integer specifying the length of the convolution window.
+    strides: An integer or tuple/list of n integers, specifying the stride length of the convolution.
+    padding: One of `"valid"` or `"same"` (case-insensitive).
+    data_format: A string, one of `channels_last` (default) or `channels_first`.
+      The ordering of the dimensions in the inputs.
+      `channels_last` corresponds to inputs with shape
+      `(batch, ..., channels)` while `channels_first` corresponds to
+      inputs with shape `(batch, channels, ...)`.
+    activation: Activation function. Set it to None to maintain a linear activation.
+    use_bias: Boolean, whether the layer uses a bias.
+    kernel_initializer: An initializer for the convolution kernel.
+    bias_initializer: An initializer for the bias vector. If None, the default initializer will be used.
+    kernel_regularizer: Optional regularizer for the convolution kernel.
+    bias_regularizer: Optional regularizer for the bias vector.
+    activity_regularizer: Optional regularizer function for the output.
+    kernel_constraint: Optional projection function to be applied to the
+        kernel after being updated by an `Optimizer` (e.g. used to implement
+        norm constraints or value constraints for layer weights). The function
+        must take as input the unprojected variable and must return the
+        projected variable (which must have the same shape). Constraints are
+        not safe to use when doing asynchronous distributed training.
+    bias_constraint: Optional projection function to be applied to the bias after being updated by an `Optimizer`.
+    trainable: Boolean, if `True` also add variables to the graph collection
+      `GraphKeys.TRAINABLE_VARIABLES` (see `tf.Variable`).
+    name: A string, the name of the layer.
+    """
     @property
     def input_stabilizer_size(self):
         return 12
