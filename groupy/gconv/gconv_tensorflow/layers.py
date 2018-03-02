@@ -144,10 +144,8 @@ class SplitGConv2D(tf.layers.Layer):
                                           constraint=self.bias_constraint,
                                           trainable=True,
                                           dtype=self.dtype)
-            self.transformed_bias = tf.reshape(self.bias, (1, 1, 1, self.filters, 1))
         else:
             self.bias = None
-            self.transformed_bias = None
         self.input_spec = tf.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})
         self.built = True
 
@@ -166,9 +164,9 @@ class SplitGConv2D(tf.layers.Layer):
                 raise NotImplemented('Currently only NHWC data_format is supported. Received:' + str(self.data_format))
 
             outputs_shape = outputs.get_shape().as_list()
-            outputs_expanded = tf.reshape(outputs, [-1, outputs_shape[1], outputs_shape[2], self.filters, self.output_stabilizer_size])
-            outputs_expanded += self.transformed_bias
-            outputs = tf.reshape(outputs_expanded, [-1] + outputs_shape[1:])
+            outputs_flat = tf.reshape(outputs, [-1, self.filters, self.output_stabilizer_size, 1])
+            outputs_flat = tf.nn.bias_add(outputs_flat, self.bias, data_format='NCHW')
+            outputs = tf.reshape(outputs_flat, [-1] + outputs_shape[1:])
 
         if self.output_mask is not None:
             outputs *= self.output_mask
