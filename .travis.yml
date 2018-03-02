@@ -3,11 +3,17 @@ python:
   - "2.7"
   - "3.4"
 
+env:
+  - TF=tensorflow==1.4
+  - TF=tensorflow==1.5
+  - TF=tensorflow==1.6
+  - TF=tf-nightly
+
 notifications:
   email: false
 
 install:
-  - pip install numpy pytest tensorflow
+  - pip install numpy pytest $TF
 
 cache: pip
 
