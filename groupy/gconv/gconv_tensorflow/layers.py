@@ -1,7 +1,7 @@
 """Contains the group equivariant convolutional tensorflow layers."""
 import tensorflow as tf
 from groupy.gconv.gconv_tensorflow import utils
-from groupy.gconv.gconv_tensorflow.transform_filter import transform_filter_2d_nhwc
+from groupy.gconv.gconv_tensorflow.transform_kernel import transform_kernel_2d_nhwc
 from groupy.gconv import make_gconv_indices as idx
 from groupy.hexa import mask
 
@@ -122,9 +122,7 @@ class SplitGConv2D(tf.layers.Layer):
         if input_shape[channel_axis].value is None:
             raise ValueError('The channel dimension of the inputs should be defined. Found `None`.')
         input_dim = input_shape[channel_axis].value
-        kernel_shape = (self.kernel_size, self.kernel_size, input_dim, self.filters)
-
-        gconv_shape_info = (self.filters, self.output_stabilizer_size, input_dim // self.input_stabilizer_size, self.input_stabilizer_size, self.kernel_size)
+        kernel_shape = (self.input_stabilizer_size, self.kernel_size, self.kernel_size, input_dim // self.input_stabilizer_size, self.filters)
 
         self.kernel = self.add_variable(name='kernel',
                                         shape=kernel_shape,
@@ -134,10 +132,9 @@ class SplitGConv2D(tf.layers.Layer):
                                         trainable=True,
                                         dtype=self.dtype)
 
-        self.transformed_kernel = transform_filter_2d_nhwc(
+        self.transformed_kernel = transform_kernel_2d_nhwc(
             self.kernel_mask * self.kernel if self.kernel_mask is not None else self.kernel,
-            flat_indices=self.transformation_indices,
-            shape_info=gconv_shape_info)
+            self.transformation_indices)
 
         if self.use_bias:
             self.bias = self.add_variable(name='bias',
@@ -300,7 +297,7 @@ class P4ConvZ2(SplitGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_c4_z2_indices(ksize=self.kernel_size))
+        return idx.make_c4_z2_indices(ksize=self.kernel_size)
 
 
 class P4ConvP4(SplitGConv2D):
@@ -350,7 +347,7 @@ class P4ConvP4(SplitGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_c4_p4_indices(ksize=self.kernel_size))
+        return idx.make_c4_p4_indices(ksize=self.kernel_size)
 
 
 class P4MConvZ2(SplitGConv2D):
@@ -400,7 +397,7 @@ class P4MConvZ2(SplitGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_d4_z2_indices(ksize=self.kernel_size))
+        return idx.make_d4_z2_indices(ksize=self.kernel_size)
 
 
 class P4MConvP4M(SplitGConv2D):
@@ -450,7 +447,7 @@ class P4MConvP4M(SplitGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_d4_p4m_indices(ksize=self.kernel_size))
+        return idx.make_d4_p4m_indices(ksize=self.kernel_size)
 
 
 class Z2ConvZ2Axial(SplitHexGConv2D):
@@ -500,7 +497,7 @@ class Z2ConvZ2Axial(SplitHexGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_c6_z2_indices(ksize=self.kernel_size))
+        return idx.make_c6_z2_indices(ksize=self.kernel_size)
 
 
 class P6ConvZ2Axial(SplitHexGConv2D):
@@ -550,7 +547,7 @@ class P6ConvZ2Axial(SplitHexGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_c6_z2_indices(ksize=self.kernel_size))
+        return idx.make_c6_z2_indices(ksize=self.kernel_size)
 
 
 class P6ConvP6Axial(SplitHexGConv2D):
@@ -600,7 +597,7 @@ class P6ConvP6Axial(SplitHexGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_c6_p6_indices(ksize=self.kernel_size))
+        return idx.make_c6_p6_indices(ksize=self.kernel_size)
 
 
 class P6MConvZ2Axial(SplitHexGConv2D):
@@ -650,7 +647,7 @@ class P6MConvZ2Axial(SplitHexGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_d6_z2_indices(ksize=self.kernel_size))
+        return idx.make_d6_z2_indices(ksize=self.kernel_size)
 
 
 class P6MConvP6MAxial(SplitHexGConv2D):
@@ -699,4 +696,4 @@ class P6MConvP6MAxial(SplitHexGConv2D):
 
     @property
     def transformation_indices(self):
-        return idx.flatten_indices(idx.make_d6_p6m_indices(ksize=self.kernel_size))
+        return idx.make_d6_p6m_indices(ksize=self.kernel_size)

@@ -12,4 +12,4 @@ install:
 cache: pip
 
 script:
-  - pytest --ignore groupy/gconv/gconv_chainer/ --ignore groupy/gconv/gconv_tensorflow/test_transform_filter.py
+  - pytest --ignore groupy/gconv/gconv_chainer/ --ignore groupy/gconv/gconv_tensorflow/test_transform_kernel.py
