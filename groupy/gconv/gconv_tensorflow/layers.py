@@ -241,7 +241,7 @@ class SplitHexGConv2D(SplitGConv2D):
     """
 
     def get_masks(self, input_shape):
-        kernel_mask = tf.convert_to_tensor(mask.hexagon_axial(self.kernel_size)[..., None, None], dtype=self.dtype, name='kernel_mask')
+        kernel_mask = tf.convert_to_tensor(mask.hexagon_axial(self.kernel_size)[None, ..., None, None], dtype=self.dtype, name='kernel_mask')
         output_shape = self.compute_output_shape(input_shape).as_list()
         ny, nx = output_shape[1:3] if self.data_format == 'NHWC' else output_shape[-2:]
         output_mask = tf.convert_to_tensor(mask.square_axial(ny, nx)[None, ..., None], dtype=self.dtype, name='output_mask')
