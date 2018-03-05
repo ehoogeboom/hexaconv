@@ -149,14 +149,14 @@ def testplot_p4m(im=None, m=0, r=0):
     filter_mr2 = rotate_flip_z2_func(filter_e, flip=1, theta_index=2)
     filter_mr3 = rotate_flip_z2_func(filter_e, flip=1, theta_index=3)
 
-    print filter_e
-    print filter_r1
-    print filter_r2
-    print filter_r3
-    print filter_m
-    print filter_mr1
-    print filter_mr2
-    print filter_mr3
+    print(filter_e)
+    print(filter_r1)
+    print(filter_r2)
+    print(filter_r3)
+    print(filter_m)
+    print(filter_mr1)
+    print(filter_mr2)
+    print(filter_mr3)
 
     # filter_e = filter_e[::-1, ::-1]
     # filter_r1 = filter_r1[::-1, ::-1]

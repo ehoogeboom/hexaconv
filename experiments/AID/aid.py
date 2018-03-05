@@ -3,7 +3,6 @@ import os
 import numpy as np
 from groupy.hexa.hexa_sample import sample_cartesian2hexa
 from groupy import hexa
-import sys
 from os.path import join, isdir
 import scipy.misc
 
@@ -84,17 +83,17 @@ def split(all_images, fraction=0.5, seed=None):
 
 
 def preprocess_aid(datadir, hex_sampling, seed):
-    print 'Preprocessing...'
+    print('Preprocessing...')
 
     # Load batches
-    print '   Loading...'
+    print('   Loading...')
 
     paths = [[join(datadir, path, i) for i in os.listdir(join(datadir, path))
               if len(i) > 4 and i[-4:] == '.jpg']
              for path in os.listdir(datadir)
              if isdir(join(datadir, path))]
 
-    print '   Loading images...'
+    print('   Loading images...')
     all_images = [[scipy.misc.imresize(
                         scipy.misc.imread(image), (64, 64)).transpose(2, 0, 1)
                    for image in path]
@@ -113,7 +112,7 @@ def preprocess_aid(datadir, hex_sampling, seed):
     if hex_sampling == '':
         mask = np.ones(train_data_all.shape[-2:], dtype='bool')
     elif hex_sampling == 'axial':
-        print '   Hex sampling...'
+        print('   Hex sampling...')
         train_data_all = _sample_hex_axial(train_data_all)
         test_data = _sample_hex_axial(test_data)
 
@@ -126,7 +125,7 @@ def preprocess_aid(datadir, hex_sampling, seed):
     test_data_no_padding = test_data[..., mask]
 
     # Contrast normalize
-    print '   Normalizing...'
+    print('   Normalizing...')
     train_data_all_no_padding = normalize(train_data_all_no_padding)
     test_data_no_padding = normalize(test_data_no_padding)
 
@@ -134,7 +133,7 @@ def preprocess_aid(datadir, hex_sampling, seed):
 
     test_data[..., mask] = test_data_no_padding
 
-    print '   Saving...'
+    print('   Saving...')
     outputdir = get_preprocess_folder(datadir, hex_sampling, seed)
     if not os.path.exists(outputdir):
         os.mkdir(outputdir)
@@ -145,7 +144,7 @@ def preprocess_aid(datadir, hex_sampling, seed):
              data=test_data,
              labels=test_labels)
 
-    print 'Preprocessing complete'
+    print('Preprocessing complete')
 
 
 def _load_cifar10_batch(file):

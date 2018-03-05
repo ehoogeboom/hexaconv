@@ -226,7 +226,7 @@ def check_equivariance(im, layers, input_array, output_array, point_group):
 
     fmap_data = cuda.to_cpu(fmap.data)
 
-    print fmap_data
+    print(fmap_data)
     assert np.allclose(fmap_data, r_fmap1_data, rtol=1e-5, atol=1e-3)
 
 

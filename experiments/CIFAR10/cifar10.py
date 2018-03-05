@@ -152,10 +152,10 @@ def get_cifar10_data(datadir, trainfn, valfn, hex_sampling=''):
 
 
 def preprocess_cifar10(datadir, hex_sampling=''):
-    print 'Preprocessing...'
+    print('Preprocessing...')
 
     # Load batches
-    print '   Loading...'
+    print('   Loading...')
 
     load_cifar_fc = _load_cifar10_batch
 
@@ -184,7 +184,7 @@ def preprocess_cifar10(datadir, hex_sampling=''):
     if hex_sampling == '':
         mask = np.ones(train_data_all.shape[-2:], dtype='bool')
     elif hex_sampling == 'axial':
-        print '   Hex sampling...'
+        print('   Hex sampling...')
         train_data_all = _sample_hex_axial(train_data_all)
         train_data = _sample_hex_axial(train_data)
         test_data = _sample_hex_axial(test_data)
@@ -195,7 +195,7 @@ def preprocess_cifar10(datadir, hex_sampling=''):
     else:
         raise ValueError('Unknown option "{}"'.format(hex_sampling))
 
-    print 'Saving a few examples...'
+    print('Saving a few examples...')
     save_images(datadir, list(train_data[:10]),
                 hex_sampling=hex_sampling)
 
@@ -205,13 +205,13 @@ def preprocess_cifar10(datadir, hex_sampling=''):
     test_data_no_padding = test_data[..., mask]
 
     # Contrast normalize
-    print '   Normalizing...'
+    print('   Normalizing...')
     train_data_all_no_padding = normalize(train_data_all_no_padding)
     train_data_no_padding = normalize(train_data_no_padding)
     val_data_no_padding = normalize(val_data_no_padding)
     test_data_no_padding = normalize(test_data_no_padding)
 
-    print '   Computing whitening matrix...'
+    print('   Computing whitening matrix...')
     train_data_all_flat = train_data_all_no_padding.reshape(
         train_data_all.shape[0], -1).T
     train_data_flat = train_data_no_padding.reshape(train_data.shape[0], -1).T
@@ -221,7 +221,7 @@ def preprocess_cifar10(datadir, hex_sampling=''):
     pca_all = PCA(
         D=train_data_all_flat, n_components=train_data_all_flat.shape[1])
 
-    print '   Whitening data...'
+    print('   Whitening data...')
     train_data_all_flat = pca_all.transform(
                             D=train_data_all_flat, whiten=True, ZCA=True)
 
@@ -253,7 +253,7 @@ def preprocess_cifar10(datadir, hex_sampling=''):
     # test_data[..., mask] = global_contrast_normalize(test_data_flat).reshape(
     #         test_data_no_padding.shape)
 
-    print '   Saving...'
+    print('   Saving...')
     outputdir = get_preprocess_folder(datadir, hex_sampling)
     if not os.path.exists(outputdir):
         os.mkdir(outputdir)
@@ -270,7 +270,7 @@ def preprocess_cifar10(datadir, hex_sampling=''):
              data=test_data,
              labels=test_labels)
 
-    print 'Preprocessing complete'
+    print('Preprocessing complete')
 
 
 def _load_cifar10_batch(file):
