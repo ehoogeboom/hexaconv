@@ -59,7 +59,7 @@ def check_equivariance_hex(im, layers, input_array, output_array, point_group, f
     check_equivariance(im, layers, input_array, output_array, point_group, filters)
 
 
-# For some reason when using a random bias the hexagonal convolutions don't pass the equivariance tests
+# We explicitly initialize the bias to test equivariance for p4/p4m groups
 @pytest.mark.parametrize('layer,input_array,output_array,point_group,ndim,eq_check,bias_init', [
     (P4ConvZ2, Z2FuncArray, P4FuncArray, c4a, 1, check_equivariance, tf.random_uniform_initializer),
     (P4MConvZ2, Z2FuncArray, P4MFuncArray, d4a, 1, check_equivariance, tf.random_uniform_initializer),
@@ -76,7 +76,6 @@ def test_equivariance(layer, input_array, output_array, point_group, ndim, eq_ch
     im = np.random.randn(1, 15, 15, ndim).astype('float32')
     eq_check(
         im=im,
-        # We explicitly initialize the bias since it would be initialized with zeros otherwise
         layers=[layer(filters, 3, padding=padding, bias_initializer=bias_init)],
         input_array=input_array,
         output_array=output_array,
@@ -85,7 +84,7 @@ def test_equivariance(layer, input_array, output_array, point_group, ndim, eq_ch
     )
 
 
-# For some reason when using a random bias the hexagonal convolutions don't pass the equivariance tests
+# We explicitly initialize the bias to test equivariance for p4/p4m groups
 @pytest.mark.parametrize('layer_1, layer_2,output_array,point_group,eq_check,bias_init', [
     (P4ConvZ2, P4ConvP4, P4FuncArray, c4a, check_equivariance, tf.random_uniform_initializer),
     (P4MConvZ2, P4MConvP4M, P4MFuncArray, d4a, check_equivariance, tf.random_uniform_initializer),
@@ -98,7 +97,6 @@ def test_net_equivariance(layer_1, layer_2, output_array, point_group, eq_check,
     eq_check(
         im=im,
         layers=[
-            # We explicitly initialize the bias since it would be initialized with zeros otherwise
             layer_1(4, 3, padding='same', bias_initializer=bias_init),
             layer_2(filters, 3, padding='same', bias_initializer=bias_init)
             ],
