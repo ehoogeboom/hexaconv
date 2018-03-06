@@ -105,7 +105,7 @@ gpu = 0
 model = Network().to_gpu(gpu)
 
 # Generate image data with labels
-X = np.random.randn(500, 3, 4, 4).astype('float32')
+X = np.random.randn(500, 3, 32, 32).astype('float32')
 y = np.random.randint(10, size=500).astype('int32')
 
 # Sample to hex grid
