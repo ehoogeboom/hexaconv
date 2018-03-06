@@ -110,3 +110,15 @@ def sample_cartesian2hexa(f_cartesian, fill_value=0.):
 def sample_hexa2zigzaghexa(f_hexa, fill_value=0.):
 
     pass
+
+
+def sample_cartesian2axial(data):
+    data_hex = np.zeros(
+        data.shape[:-2] + sample_cartesian2hexa(data[0, 0]).shape,
+        data.dtype)
+
+    for i in range(data.shape[0]):
+        for channel in range(data.shape[1]):
+            data_hex[i, channel] = sample_cartesian2hexa(data[i, channel])
+
+    return data_hex
