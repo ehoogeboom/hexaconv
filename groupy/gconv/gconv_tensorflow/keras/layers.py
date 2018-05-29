@@ -35,8 +35,6 @@ class SplitGConv2D(tf_layers.SplitGConv2D, tf.keras.layers.Layer):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -103,7 +101,6 @@ class SplitGConv2D(tf_layers.SplitGConv2D, tf.keras.layers.Layer):
             'strides': self.strides,
             'padding': self.padding,
             'data_format': self.data_format,
-            'dilation_rate': self.dilation_rate,
             'activation': tf.keras.activations.serialize(self.activation),
             'use_bias': self.use_bias,
             'kernel_initializer': tf.keras.initializers.serialize(self.kernel_initializer),
@@ -136,8 +133,6 @@ class SplitHexGConv2D(SplitGConv2D, tf_layers.SplitHexGConv2D):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -183,8 +178,6 @@ class P4ConvZ2(SplitGConv2D, tf_layers.P4ConvZ2):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -230,8 +223,6 @@ class P4ConvP4(SplitGConv2D, tf_layers.P4ConvP4):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -277,8 +268,6 @@ class P4MConvZ2(SplitGConv2D, tf_layers.P4MConvZ2):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -324,8 +313,6 @@ class P4MConvP4M(SplitGConv2D, tf_layers.P4MConvP4M):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -371,8 +358,6 @@ class Z2ConvZ2Axial(SplitHexGConv2D, tf_layers.Z2ConvZ2Axial):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -418,8 +403,6 @@ class P6ConvZ2Axial(SplitHexGConv2D, tf_layers.P6ConvZ2Axial):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -465,8 +448,6 @@ class P6ConvP6Axial(SplitHexGConv2D, tf_layers.P6ConvP6Axial):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -512,8 +493,6 @@ class P6MConvZ2Axial(SplitHexGConv2D, tf_layers.P6MConvZ2Axial):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
@@ -559,8 +538,6 @@ class P6MConvP6MAxial(SplitHexGConv2D, tf_layers.P6MConvP6MAxial):
           specifying the strides of the convolution along the width and height.
           Can be a single integer to specify the same value for
           all spatial dimensions.
-          Specifying any stride value != 1 is incompatible with specifying
-          any `dilation_rate` value != 1.
       padding: one of `"valid"` or `"same"` (case-insensitive).
       data_format: A string,
           one of `channels_last` (default) or `channels_first`.
