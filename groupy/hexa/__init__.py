@@ -1,1 +1,1 @@
-import mask
+from groupy.hexa import mask

@@ -3,10 +3,19 @@ python:
   - "2.7"
   - "3.4"
 
+env:
+  - TF=tensorflow==1.4
+  - TF=tensorflow==1.5
+  - TF=tensorflow==1.6
+  - TF=tf-nightly
+
+notifications:
+  email: false
+
 install:
-  - pip install numpy pytest
+  - pip install numpy pytest $TF
 
 cache: pip
 
 script:
-  - pytest --ignore groupy/gconv
+  - pytest --ignore groupy/gconv/gconv_chainer/ --ignore groupy/gconv/gconv_tensorflow/test_transform_kernel.py
