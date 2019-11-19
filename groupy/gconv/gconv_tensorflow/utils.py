@@ -3,6 +3,8 @@ def convert_data_format(data_format):
         return 'NHWC'
     elif data_format == 'channels_first':
         return 'NCHW'
+    elif data_format in ['NHWC', 'NCHW']:
+        return data_format
     raise ValueError('Invalid data_format:', data_format)
 
 

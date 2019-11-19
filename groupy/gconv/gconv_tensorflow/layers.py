@@ -87,9 +87,9 @@ class SplitGConv2D(tf.layers.Layer):
         self.kernel_size = kernel_size
         self.strides = utils.normalize_tuple(strides, 2, 'strides')
         self.padding = utils.normalize_padding(padding)
-        if data_format != 'channels_last':
-            raise NotImplemented('Currently only channels_last data_format is supported. Received:' + str(data_format))
         self.data_format = utils.convert_data_format(data_format)
+        if self.data_format != 'NHWC' and self.data_format != 'channels_last':
+            raise NotImplementedError('Currently only channels_last data_format is supported. Received:' + str(self.data_format))
         self.activation = activation
         self.use_bias = use_bias
         self.kernel_initializer = kernel_initializer
@@ -161,7 +161,7 @@ class SplitGConv2D(tf.layers.Layer):
 
         if self.use_bias:
             if self.data_format != 'NHWC':
-                raise NotImplemented('Currently only NHWC data_format is supported. Received:' + str(self.data_format))
+                raise NotImplementedError('Currently only NHWC data_format is supported. Received:' + str(self.data_format))
 
             outputs_shape = outputs.get_shape().as_list()
             outputs_flat = tf.reshape(outputs, [-1, self.filters, self.output_stabilizer_size, 1])
