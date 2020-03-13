@@ -18,7 +18,7 @@ def tf_trans_kernel_nhwc(w, inds):
     wt = tf.constant(w)
     rwt = transform_kernel_2d_nhwc(wt, inds)
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         rwt = sess.run(rwt)
 
     rwt = rwt.transpose(3, 2, 0, 1).reshape(no, nto, ni, nti, n, n)

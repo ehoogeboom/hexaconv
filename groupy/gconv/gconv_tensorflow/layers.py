@@ -6,7 +6,7 @@ from groupy.gconv import make_gconv_indices as idx
 from groupy.hexa import mask
 
 
-class SplitGConv2D(tf.layers.Layer):
+class SplitGConv2D(tf.keras.layers.Layer):
     """Group convolution base class for split plane groups.
 
     A plane group (aka wallpaper group) is a group of distance-preserving transformations that includes two independent
@@ -69,7 +69,7 @@ class SplitGConv2D(tf.layers.Layer):
                  activation=None,
                  use_bias=True,
                  kernel_initializer=None,
-                 bias_initializer=tf.zeros_initializer(),
+                 bias_initializer=tf.keras.initializers.zeros(),
                  kernel_regularizer=None,
                  bias_regularizer=None,
                  activity_regularizer=None,
@@ -98,7 +98,7 @@ class SplitGConv2D(tf.layers.Layer):
         self.bias_regularizer = bias_regularizer
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
-        self.input_spec = tf.layers.InputSpec(ndim=4)
+        self.input_spec = tf.keras.layers.InputSpec(ndim=4)
 
     def get_masks(self, input_shape):
         return None, None
@@ -118,47 +118,48 @@ class SplitGConv2D(tf.layers.Layer):
     def build(self, input_shape):
         input_shape = tf.TensorShape(input_shape)
         self.kernel_mask, self.output_mask = self.get_masks(input_shape)
+        # print(self.data_format)
         channel_axis = -1 if self.data_format == 'NHWC' else 1
-        if input_shape[channel_axis].value is None:
+        if input_shape[channel_axis] is None:
             raise ValueError('The channel dimension of the inputs should be defined. Found `None`.')
-        input_dim = input_shape[channel_axis].value
+        input_dim = input_shape[channel_axis]
         kernel_shape = (self.input_stabilizer_size, self.kernel_size, self.kernel_size, input_dim // self.input_stabilizer_size, self.filters)
 
-        self.kernel = self.add_variable(name='kernel',
-                                        shape=kernel_shape,
-                                        initializer=self.kernel_initializer,
-                                        regularizer=self.kernel_regularizer,
-                                        constraint=self.kernel_constraint,
-                                        trainable=True,
-                                        dtype=self.dtype)
-
-        self.transformed_kernel = transform_kernel_2d_nhwc(
-            self.kernel_mask * self.kernel if self.kernel_mask is not None else self.kernel,
-            self.transformation_indices)
+        self.kernel = self.add_weight(name='kernel',
+                                      shape=kernel_shape,
+                                      initializer=self.kernel_initializer,
+                                      regularizer=self.kernel_regularizer,
+                                      constraint=self.kernel_constraint,
+                                      trainable=True,
+                                      dtype=self.dtype,
+                                      use_resource=True)
 
         if self.use_bias:
-            self.bias = self.add_variable(name='bias',
-                                          shape=(self.filters,),
-                                          initializer=self.bias_initializer,
-                                          regularizer=self.bias_regularizer,
-                                          constraint=self.bias_constraint,
-                                          trainable=True,
-                                          dtype=self.dtype)
+            self.bias = self.add_weight(name='bias',
+                                        shape=(self.filters,),
+                                        initializer=self.bias_initializer,
+                                        regularizer=self.bias_regularizer,
+                                        constraint=self.bias_constraint,
+                                        trainable=True,
+                                        dtype=self.dtype,
+                                        use_resource=True)
         else:
             self.bias = None
-        self.input_spec = tf.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})
+        self.input_spec = tf.keras.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})
         self.built = True
 
     def call(self, inputs):
         strides = (1,) + self.strides + (1,) if self.data_format == 'NHWC' else (1, 1) + self.strides
 
-        outputs = tf.nn.conv2d(input=inputs,
-                               filter=self.transformed_kernel,
-                               strides=strides,
-                               padding=self.padding.upper(),
-                               data_format=self.data_format,
-                               name=self.name)
+        self.transformed_kernel = transform_kernel_2d_nhwc(
+            self.kernel_mask * self.kernel if self.kernel_mask is not None else self.kernel,
+            self.transformation_indices)
 
+        outputs = tf.keras.backend.conv2d(inputs,
+                                          kernel=self.transformed_kernel,
+                                          strides=strides,
+                                          padding=self.padding,
+                                          data_format="channels_last")
         if self.use_bias:
             if self.data_format != 'NHWC':
                 raise NotImplementedError('Currently only NHWC data_format is supported. Received:' + str(self.data_format))
@@ -241,10 +242,10 @@ class SplitHexGConv2D(SplitGConv2D):
     """
 
     def get_masks(self, input_shape):
-        kernel_mask = tf.convert_to_tensor(mask.hexagon_axial(self.kernel_size)[None, ..., None, None], dtype=self.dtype, name='kernel_mask')
+        kernel_mask = tf.convert_to_tensor(value=mask.hexagon_axial(self.kernel_size)[None, ..., None, None], dtype=self.dtype, name='kernel_mask')
         output_shape = self.compute_output_shape(input_shape).as_list()
         ny, nx = output_shape[1:3] if self.data_format == 'NHWC' else output_shape[-2:]
-        output_mask = tf.convert_to_tensor(mask.square_axial(ny, nx)[None, ..., None], dtype=self.dtype, name='output_mask')
+        output_mask = tf.convert_to_tensor(value=mask.square_axial(ny, nx)[None, ..., None], dtype=self.dtype, name='output_mask')
         return kernel_mask, output_mask
 
 

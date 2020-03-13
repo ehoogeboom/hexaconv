@@ -22,11 +22,13 @@ def transform_kernel_2d_nhwc(kernel, indices):
     The output filter bank transformed_w has shape (n, n, ni * nti, no * nto),
     (so there are nto times as many filters in the output as we had in the input w)
     """
-
+    # print("before trans", kernel)
     nti, w, h, ni, no = kernel.get_shape().as_list()
+    # print("indices", nti, w, h, ni, no)
     transformed_kernel = tf.gather_nd(kernel, indices)                         # shape (nto, nti, n, n, ni, no)
 
-    transformed_kernel = tf.transpose(transformed_kernel, [2, 3, 4, 1, 5, 0])  # shape (n, n, ni, nti, no, nto)
+    transformed_kernel = tf.transpose(a=transformed_kernel, perm=[2, 3, 4, 1, 5, 0])  # shape (n, n, ni, nti, no, nto)
     transformed_kernel = tf.reshape(transformed_kernel, [w, h, ni * nti, -1])  # shape (n, n, ni * nti, no * nto)
+    # print("after trans", transformed_kernel)
 
     return transformed_kernel
