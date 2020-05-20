@@ -4,9 +4,13 @@ from groupy.gconv.gconv_tensorflow import utils
 from groupy.gconv.gconv_tensorflow.transform_kernel import transform_kernel_2d_nhwc
 from groupy.gconv import make_gconv_indices as idx
 from groupy.hexa import mask
+try:
+    from tensorflow.layers import Layer  # tensorflow 1
+except ImportError:
+    from tensorflow.keras.layers import Layer  # tensorflow 2
 
 
-class SplitGConv2D(tf.keras.layers.Layer):
+class SplitGConv2D(Layer):
     """Group convolution base class for split plane groups.
 
     A plane group (aka wallpaper group) is a group of distance-preserving transformations that includes two independent
@@ -98,7 +102,10 @@ class SplitGConv2D(tf.keras.layers.Layer):
         self.bias_regularizer = bias_regularizer
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
-        self.input_spec = tf.keras.layers.InputSpec(ndim=4)
+        try:
+            self.input_spec = tf.layers.InputSpec(ndim=4)        # tensorflow 1
+        except AttributeError:
+            self.input_spec = tf.keras.layers.InputSpec(ndim=4)  # tensorflow 2
 
     def get_masks(self, input_shape):
         return None, None
@@ -120,9 +127,14 @@ class SplitGConv2D(tf.keras.layers.Layer):
         self.kernel_mask, self.output_mask = self.get_masks(input_shape)
         # print(self.data_format)
         channel_axis = -1 if self.data_format == 'NHWC' else 1
-        if input_shape[channel_axis] is None:
+        try:
+            input_dim = input_shape[channel_axis].value  # tensorflow 1
+        except AttributeError:
+            input_dim = input_shape[channel_axis]        # tensorflow 2
+
+        if input_dim is None:
             raise ValueError('The channel dimension of the inputs should be defined. Found `None`.')
-        input_dim = input_shape[channel_axis]
+
         kernel_shape = (self.input_stabilizer_size, self.kernel_size, self.kernel_size, input_dim // self.input_stabilizer_size, self.filters)
 
         self.kernel = self.add_weight(name='kernel',
@@ -145,7 +157,11 @@ class SplitGConv2D(tf.keras.layers.Layer):
                                         use_resource=True)
         else:
             self.bias = None
-        self.input_spec = tf.keras.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})
+
+        try:
+            self.input_spec = tf.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})        # tensorflow 1
+        except AttributeError:
+            self.input_spec = tf.keras.layers.InputSpec(ndim=4, axes={channel_axis: input_dim})  # tensorflow 2
         self.built = True
 
     def call(self, inputs):
@@ -154,6 +170,21 @@ class SplitGConv2D(tf.keras.layers.Layer):
         self.transformed_kernel = transform_kernel_2d_nhwc(
             self.kernel_mask * self.kernel if self.kernel_mask is not None else self.kernel,
             self.transformation_indices)
+
+        try:               # tensorflow 1.0
+            outputs = tf.nn.conv2d(input=inputs,
+                                   filter=self.transformed_kernel,
+                                   strides=strides,
+                                   padding=self.padding.upper(),
+                                   data_format=self.data_format,
+                                   name=self.name)
+        except TypeError:  # tensorflow 2.0
+            outputs = tf.nn.conv2d(input=inputs,
+                                   filters=self.transformed_kernel,
+                                   strides=strides,
+                                   padding=self.padding.upper(),
+                                   data_format=self.data_format,
+                                   name=self.name)
 
         outputs = tf.keras.backend.conv2d(inputs,
                                           kernel=self.transformed_kernel,
