@@ -179,18 +179,12 @@ class SplitGConv2D(Layer):
                                    data_format=self.data_format,
                                    name=self.name)
         except TypeError:  # tensorflow 2.0
-            outputs = tf.nn.conv2d(input=inputs,
-                                   filters=self.transformed_kernel,
-                                   strides=strides,
-                                   padding=self.padding.upper(),
-                                   data_format=self.data_format,
-                                   name=self.name)
+            outputs = tf.keras.backend.conv2d(inputs,
+                                            kernel=self.transformed_kernel,
+                                            strides=strides,
+                                            padding=self.padding,
+                                            data_format="channels_last")
 
-        outputs = tf.keras.backend.conv2d(inputs,
-                                          kernel=self.transformed_kernel,
-                                          strides=strides,
-                                          padding=self.padding,
-                                          data_format="channels_last")
         if self.use_bias:
             if self.data_format != 'NHWC':
                 raise NotImplementedError('Currently only NHWC data_format is supported. Received:' + str(self.data_format))
